@@ -284,6 +284,13 @@ function App() {
     }));
   }
 
+  const handleChangeInputText = (e, typeD) => {
+    setOptionSelected(prevOptions => ({
+      ...prevOptions,
+      [typeD]: e
+    }));
+  }
+
   const columns_tab = [
     {
       title: 'Tên mặt hàng',
@@ -497,8 +504,10 @@ function App() {
               handleChangeID(val, "DMH")
             }}
           />
-          <InputS title="Tên Mặt Hàng" placeholder="Nhập tên mặt hàng" dataFilter={dataSource} type="TMH"
-
+          <InputS title="Tên Mặt Hàng" placeholder="Nhập tên mặt hàng"
+              onChangeInput={(e) => {
+                handleChangeInputText(e.target.value, "TH")
+              }}
           />
           <InputS title="Tên Khác" placeholder="Nhập tên khác" />
           <InputS title="Mã Mặt Hàng" placeholder="Nhập mã mặt hàng" />

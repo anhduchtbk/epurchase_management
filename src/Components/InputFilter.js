@@ -47,6 +47,7 @@ export const InputS = (props) => {
             </label>
             <Input
                 placeholder={props.placeholder}
+                onChange={props.onChangeInput}
             />
         </div>
     );
