@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import './App.css';
 import { Icon, Image } from 'semantic-ui-react';
 import { Input, Table, Tag, Space, Dropdown, Form, Typography, Badge, Button } from 'antd';
@@ -46,20 +46,26 @@ function App() {
   const [form] = Form.useForm();
   const [editingKey, setEditingKey] = useState('');
   const isEditing = (record) => record.key === editingKey;
+  const [optionSelected, setOptionSelected] = useState({
+    TH: '',
+    DMH: '',
+    NMH: '',
+    LMH: '',
+    PB: '',
+  });
+  const [filteredData, setFilteredData] = useState([]);
+
   const edit = (record) => {
     form.setFieldsValue({
       TH: '',
       DMH: '',
       NMH: '',
+      LMH: '',
+      PB: '',
       ...record,
     });
     setEditingKey(record.key);
   };
-
-  const language = {
-    "vietnamese": "VI",
-    "english": "EN"
-  }
 
   let items = [
     {
@@ -71,7 +77,74 @@ function App() {
       key: '1',
     }
   ]
-
+  const originalData = [
+    {
+      key: '0',
+      TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 0',
+      DMH: 'Duplex 1MT DL 250 gsm',
+      NMH: 'Phần mềm, Nhóm chiết khấu',
+      LMH: 'Paper supplies',
+      PB: 'Khong',
+      TT: <Tag color={'green'}>
+        Active
+      </Tag>
+    },
+    {
+      key: '1',
+      TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 1',
+      DMH: 'Duplex 1MT DL 250 gsm',
+      NMH: 'Phần mềm, Nhóm chiết khấu',
+      LMH: 'Paper supplies',
+      PB: 'Khong',
+      TT: <Tag color={'green'}>
+        Active
+      </Tag>
+    },
+    {
+      key: '2',
+      TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 2',
+      DMH: 'Duplex 1MT DL 250 gsm',
+      NMH: 'Phần mềm, Nhóm chiết khấu',
+      LMH: 'Paper supplies',
+      PB: 'Khong',
+      TT: <Tag color={'green'}>
+        Active
+      </Tag>
+    },
+    {
+      key: '3',
+      TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 3',
+      DMH: 'Duplex 1MT DL 250 gsm',
+      NMH: 'Phần mềm, Nhóm chiết khấu',
+      LMH: 'Paper supplies',
+      PB: 'Khong',
+      TT: <Tag color={'green'}>
+        Active
+      </Tag>
+    },
+    {
+      key: '4',
+      TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 4',
+      DMH: 'Duplex 1MT DL 250 gsm',
+      NMH: 'Phần mềm, Nhóm chiết khấu',
+      LMH: 'Paper supplies',
+      PB: 'Khong',
+      TT: <Tag color={'green'}>
+        Active
+      </Tag>
+    },
+    {
+      key: '5',
+      TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 5',
+      DMH: 'Duplex 1MT DL 250 gsm',
+      NMH: 'Phần mềm, Nhóm chiết khấu',
+      LMH: 'Paper supplies',
+      PB: 'Khong',
+      TT: <Tag color={'green'}>
+        Active
+      </Tag>
+    },
+  ]
   const [dataSource, setDataSource] = useState([
     {
       key: '0',
@@ -85,7 +158,7 @@ function App() {
       </Tag>
     },
     {
-      key: '2',
+      key: '1',
       TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 1',
       DMH: 'Duplex 1MT DL 250 gsm',
       NMH: 'Phần mềm, Nhóm chiết khấu',
@@ -96,7 +169,7 @@ function App() {
       </Tag>
     },
     {
-      key: '3',
+      key: '2',
       TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 2',
       DMH: 'Duplex 1MT DL 250 gsm',
       NMH: 'Phần mềm, Nhóm chiết khấu',
@@ -107,7 +180,7 @@ function App() {
       </Tag>
     },
     {
-      key: '4',
+      key: '3',
       TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 3',
       DMH: 'Duplex 1MT DL 250 gsm',
       NMH: 'Phần mềm, Nhóm chiết khấu',
@@ -118,7 +191,7 @@ function App() {
       </Tag>
     },
     {
-      key: '5',
+      key: '4',
       TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 4',
       DMH: 'Duplex 1MT DL 250 gsm',
       NMH: 'Phần mềm, Nhóm chiết khấu',
@@ -129,7 +202,7 @@ function App() {
       </Tag>
     },
     {
-      key: '6',
+      key: '5',
       TH: 'Duplex 1MT DL 250 gsm khổ 750 không FSC 5',
       DMH: 'Duplex 1MT DL 250 gsm',
       NMH: 'Phần mềm, Nhóm chiết khấu',
@@ -141,10 +214,75 @@ function App() {
     },
   ]);
 
-  const handleDelete = (key) => {
+  const handleDelete = useCallback((key) => {
     const newData = dataSource.filter((item) => item.key !== key);
     setDataSource(newData);
-  };
+  }, [dataSource]);
+
+  const save = useCallback(async (key) => {
+    try {
+      const row = await form.validateFields();
+      const newData = [...dataSource];
+      const index = newData.findIndex((item) => key === item.key);
+      if (index > -1) {
+        const item = newData[index];
+        newData.splice(index, 1, {
+          ...item,
+          ...row,
+        });
+        setDataSource(newData);
+        setEditingKey('');
+      } else {
+        newData.push(row);
+        setDataSource(newData);
+        setEditingKey('');
+      }
+    } catch (errInfo) {
+      console.log('Validate Failed:', errInfo);
+    }
+  },);
+
+  const handleClickDropdown = (key, record) => {
+    if (key.key === '0' || key === '0') {
+      // isEditing(record);
+      edit(record);
+    } else if (key.key === '1' || key === '1') {
+      handleDelete(record.key)
+    }
+  }
+
+  const handleAddNew = useCallback(
+    () => {
+      let newKey = String(dataSource.length + 1);
+      let newData = {
+        key: newKey,
+        TH: '',
+        DMH: '',
+        NMH: '',
+        LMH: '',
+        PB: '',
+        TT: <Tag color={'green'}>
+          Active
+        </Tag>
+      };
+      handleClickDropdown('0', newData);
+      setDataSource([newData, ...dataSource]);
+    }, [dataSource]
+  );
+
+  const handleSearchID = (val, typeD) => {
+    setOptionSelected(prevOptions => ({
+      ...prevOptions,
+      [typeD]: val
+    }));
+  }
+
+  const handleChangeID = (val, typeD) => {
+    setOptionSelected(prevOptions => ({
+      ...prevOptions,
+      [typeD]: val
+    }));
+  }
 
   const columns_tab = [
     {
@@ -173,11 +311,13 @@ function App() {
       width: 100,
       dataIndex: 'LMH',
       key: '4',
+      editable: true,
     },
     {
       title: 'Sử dụng phiên bản',
       width: 100,
       dataIndex: 'PB',
+      editable: true,
       key: '5',
     },
     {
@@ -192,31 +332,40 @@ function App() {
       dataIndex: 'TV',
       key: '7',
       render: (_, record) => {
-        return dataSource.length >= 1 ? (
-          <Space size="middle">
-            <Dropdown
-              menu={{
-                items,
-                onClick: (key) => {
-
-                  if (key.key === '0') {
-                    isEditing(record);
-                    edit(record);
-                  } else if (key.key === '1') {
-                    handleDelete(record.key)
-                  }
-                }
+        const editable = isEditing(record);
+        return editable ? (
+          <span>
+            <Typography.Link
+              onClick={() => save(record.key)}
+              style={{
+                marginRight: 8,
               }}
-            // trigger={['click']}
             >
-              <a>
-                <Space>
-                  <DashOutlined />
-                </Space>
-              </a>
-            </Dropdown>
-          </Space>
-        ) : null
+              Lưu
+            </Typography.Link>
+          </span>
+        ) :
+          (
+            dataSource.length >= 1 ? (
+              <Space size="middle">
+                <Dropdown
+                  menu={{
+                    items,
+                    onClick: (key) => {
+                      handleClickDropdown(key, record)
+                    }
+                  }}
+                // trigger={['click']}
+                >
+                  <a>
+                    <Space>
+                      <DashOutlined />
+                    </Space>
+                  </a>
+                </Dropdown>
+              </Space>
+            ) : null
+          )
 
       },
 
@@ -239,6 +388,20 @@ function App() {
       }),
     };
   });
+
+  useEffect(() => {
+    const filterData = () => {
+      const filtered = dataSource.filter(item => {
+        return Object.keys(optionSelected).every(key => {
+          if (optionSelected[key] === '') return true; 
+          return item[key].toLowerCase().includes(optionSelected[key].toLowerCase());
+        });
+      });
+      setFilteredData(filtered);
+    };
+
+    filterData();
+  }, [optionSelected, dataSource]);
 
   return (
     <div className='static'>
@@ -294,6 +457,7 @@ function App() {
             <Button
               children="Tạo mới"
               icon={<PlusOutlined />}
+              onClick={handleAddNew}
             />
 
             <Button
@@ -309,10 +473,33 @@ function App() {
         >
           <InputDrop title="Loại Mặt Hàng" placeholder="Nhập loại mặt" />
           <InputDrop title="Trạng Thái" placeholder="Nhập trạng thái" />
-          <InputDrop title="Sử Dụng Phiên Bản" placeholder="Chọn phiên bản" />
-          <InputDrop title="Nhóm Mặt Hàng" placeholder="Chọn nhóm mặt hàng" />
-          <InputDrop title="Danh Mục Mặt Hàng" placeholder="Nhập danh mục mặt hàng" />
-          <InputS title="Tên Mặt Hàng" placeholder="Nhập tên mặt hàng" />
+          <InputDrop title="Sử Dụng Phiên Bản" placeholder="Chọn phiên bản" dataFilter={dataSource} type="PB"
+            onSearchID={(val) => {
+              handleSearchID(val, "PB")
+            }}
+            onChangeID={(val) => {
+              handleChangeID(val, "PB")
+            }}
+          />
+          <InputDrop title="Nhóm Mặt Hàng" placeholder="Chọn nhóm mặt hàng" dataFilter={dataSource} type="NMH"
+            onSearchID={(val) => {
+              handleSearchID(val, "NMH")
+            }}
+            onChangeID={(val) => {
+              handleChangeID(val, "NMH")
+            }}
+          />
+          <InputDrop title="Danh Mục Mặt Hàng" placeholder="Nhập danh mục mặt hàng" dataFilter={dataSource} type="DMH"
+            onSearchID={(val) => {
+              handleSearchID(val, "DMH")
+            }}
+            onChangeID={(val) => {
+              handleChangeID(val, "DMH")
+            }}
+          />
+          <InputS title="Tên Mặt Hàng" placeholder="Nhập tên mặt hàng" dataFilter={dataSource} type="TMH"
+
+          />
           <InputS title="Tên Khác" placeholder="Nhập tên khác" />
           <InputS title="Mã Mặt Hàng" placeholder="Nhập mã mặt hàng" />
           <InputS title="Mã Từ ERP" placeholder="Nhập mã từ ERP" />
@@ -336,7 +523,7 @@ function App() {
                 }}
                 columns={mergedColumns}
                 rowClassName="editable-row"
-                dataSource={dataSource}
+                dataSource={filteredData}
                 scroll={{
                   x: 1300,
                   y: 300,
